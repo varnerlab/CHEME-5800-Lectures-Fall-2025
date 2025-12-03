@@ -160,13 +160,13 @@ end
         maxiterations::Int64 = 1000, ϵ::Float64 = 1e-10) where T <: Number
 
 Iteratively update a modern Hopfield network by alternating softmax probability updates and state reconstruction.
-Stops when change in probabilities is below `ϵ` or after `maxiterations`.
+Stops when L1 change in probabilities is below `ϵ` or after `maxiterations`.
 
 ### Arguments
 - `model::MyModernHopfieldNetworkModel`: Hopfield network containing memory matrix `X` and inverse-temperature `β`.
 - `sₒ::Array{T,1}`: initial continuous state.
 - `maxiterations::Int64`: maximum number of update steps (probability + state).
-- `ϵ::Float64`: L2 threshold on successive probability vectors for convergence.
+- `ϵ::Float64`: L1 threshold on successive probability vectors for convergence.
 
 ### Returns
 - `s::Array{T,1}`: final state.
@@ -200,11 +200,14 @@ function recover(model::MyModernHopfieldNetworkModel, sₒ::Array{T,1};
 
         # first: compute the difference between the current and previous probabilities
         if (iteration_counter > 1)
-            Δ = norm(probability[iteration_counter] - probability[iteration_counter-1]);
+            Δ = (1/2)*norm(probability[iteration_counter] - probability[iteration_counter-1], 1); # L1 change
         end
 
         # next: check for convergence. If we are out of iterations or the difference is small, we stop
-        if (iteration_counter >= maxiterations || Δ ≤ ϵ)
+        if (iteration_counter >= maxiterations)
+            should_stop_iteration = true;
+            @warn "Maximum iterations ($maxiterations) reached before convergence (Δ = $Δ, ϵ = $ϵ)."
+        elseif (Δ ≤ ϵ)
             should_stop_iteration = true;
         else
             iteration_counter += 1; # increment the iteration counter, we are not done yet. Keep going.
