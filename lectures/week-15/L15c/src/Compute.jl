@@ -234,16 +234,11 @@ function decode(simulationstate::Array{T,1};
     number_of_rows::Int64 = 28, number_of_cols::Int64 = 28)::Array{T,2} where T <: Number
     
     # initialize -
-    reconstructed_image = Array{Int32,2}(undef, number_of_rows, number_of_cols);
+    reconstructed_image = Array{T,2}(undef, number_of_rows, number_of_cols);
     linearindex = 1;
     for row ∈ 1:number_of_rows
         for col ∈ 1:number_of_cols
-            s = simulationstate[linearindex];
-            if (s == -1)
-                reconstructed_image[row,col] = 0;
-            else
-                reconstructed_image[row,col] = 1;
-            end
+            reconstructed_image[row,col] = simulationstate[linearindex];
             linearindex+=1;
         end
     end
