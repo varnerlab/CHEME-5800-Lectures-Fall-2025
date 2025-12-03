@@ -17,7 +17,7 @@ ___
 ## Examples
 Today, we will use the following examples to illustrate key concepts:
 
-> [▶ Analyze a modern Hopfield Network](CHEME-5800-L15c-Example-ModernHopfieldNetwork-Fall-2025.ipynb). In this example, we analyze an example of a modern Hopfield Network to understand how it encodes and retrieves gray scale (continuous) patterns. This example builds on the concepts introduced in the previous lecture and demonstrates the application of modern Hopfield networks in continuous associative memory tasks.
+> [▶ Analyze a modern Hopfield network](CHEME-5800-L15c-Example-ModernHopfieldNetwork-Fall-2025.ipynb). In this example, we analyze a modern Hopfield Network to understand how it encodes and retrieves gray-scale (continuous) patterns. This example builds on the concepts introduced in the previous lecture and demonstrates the application of modern Hopfield networks in continuous associative memory tasks.
 ___
 
 ## Origin story: McCulloch-Pitts Neurons
@@ -134,7 +134,7 @@ Classical Hopfield networks are elegant but limited: they can only store a small
 The key innovation in modern Hopfield networks is the reformulation of the energy function. [Krotov and Hopfield (2016)](https://arxiv.org/abs/1606.01164) proposed a new energy function of the form:
 $$
 \begin{align*}
-E(\mathbf{s}) &= -\sum_{i=1}^{K}F(\mathbf{m}_{i}^{\top}\mathbf{s}) \\
+E(\mathbf{s}) &= -\sum_{i=1}^{K}F(\underbrace{\mathbf{m}_{i}^{\top}\mathbf{s}}_{\text{similarity}}) \\
 \end{align*}
 $$
 where $F$ is a nonlinear function, $\mathbf{m}_i$ is the $i$-th memory, $K$ is the number of memories, and $\mathbf{s}$ is the state of the network. 
@@ -152,12 +152,18 @@ $$
 $$
 and $\beta$ is an inverse temperature parameter that controls the sharpness of the distribution. Finally, $M$ is the largest norm of all the memories, i.e., $M = \max_{i=1,\dots,K}\|\mathbf{m}_{i}\|$. The constants $\frac{1}{\beta}\log(K)$ and $\frac{1}{2}M^2$ ensure the energy remains bounded and comparable across different configurations.
 
-The vector $\mathbf{X}^{\top}\mathbf{s}$ computes the similarity (dot product) between the current state $\mathbf{s}$ and each stored memory, producing a $K$-dimensional vector of similarities. The log-sum-exp function then aggregates these similarities in a smooth, differentiable manner.
+The __vector__ $\mathbf{X}^{\top}\mathbf{s}$ computes the similarity (dot product) between the current state $\mathbf{s}$ and each stored memory, producing a $K$-dimensional vector of similarities. The log-sum-exp function then aggregates these similarities in a smooth, differentiable manner.
+
+<div>
+    <center>
+        <img src="figs/Fig-Matrix-Vector-Right-Ab-product-NeedToRedrawThis.png" width="580"/>
+    </center>
+</div>
 
 ### Algorithm: Memory retrieval
 The user provides a set of memory vectors $\mathbf{X} = \left\{\mathbf{m}_{1}, \mathbf{m}_{2}, \ldots, \mathbf{m}_{K}\right\}$, where $\mathbf{m}_{i} \in \mathbb{R}^{N}$ is a memory vector of size $N$ and $K$ is the number of memory vectors. Further, the user provides an initial _partial memory_ $\mathbf{s}_{\circ} \in \mathbb{R}^{N}$, which is a vector of size $N$, and specifies the _inverse temperature_ $\beta$ of the system.
 
-__Initialize__ the network with the memory matrix $\mathbf{X}$ and inverse temperature $\beta$. Set the current state $\mathbf{s} \gets \mathbf{s}_{\circ}$, initialize the iteration counter $t \gets 1$, maximum iterations $\texttt{maxiter}$, and set convergence flag $\texttt{converged} \gets \texttt{false}$ and tolerance $\epsilon > 0$.
+__Initialize__ the network with the memory matrix $\mathbf{X}$ and inverse temperature $\beta\in\mathbb{R}_{>0}$. Set the current state $\mathbf{s} \gets \mathbf{s}_{\circ}$, initialize the iteration counter $t \gets 1$, maximum iterations $\texttt{maxiter}$, and set convergence flag $\texttt{converged} \gets \texttt{false}$ and tolerance $\epsilon > 0$.
 
 > **Parameter Guidelines**: Common choices are `maxiter = 1000` and $\epsilon$ = `1e-6`. Modern Hopfield networks typically converge within 10–100 iterations, making `maxiter = 1000` a conservative upper bound. The tolerance $\epsilon$ = `1e-6` provides good precision for most applications while avoiding numerical precision issues.
 
@@ -166,7 +172,7 @@ While not $\texttt{converged}$ and $t \leq \texttt{maxiter}$ __do__:
    2. Compute the _current_ probability vector $\mathbf{p} = \texttt{softmax}(\beta\cdot\mathbf{z})$ where $\texttt{softmax}(\mathbf{u})_i = \frac{\exp(u_i)}{\sum_{j=1}^{K}\exp(u_j)}$.
    3. Compute the _next_ state vector $\mathbf{s}^{\prime} = \mathbf{X}\mathbf{p}$ using the current probability vector $\mathbf{p}$ and the memory matrix $\mathbf{X}$. This step computes a weighted sum of the memory vectors based on the probabilities.
    4. **Check for convergence**: If $\lVert \mathbf{s}^{\prime} - \mathbf{s}\rVert_{2} \leq \epsilon$, then set $\texttt{converged} \gets \texttt{true}$.
-      - **Alternative**: If $\lVert \mathbf{p} - \mathbf{p}_{\text{prev}}\rVert_{1} \leq \epsilon_p$, where $\mathbf{p}_{\text{prev}}$ is the probability vector from the previous iteration, $\epsilon_p$ is the convergence tolerance for probabilities (default: $\epsilon$ = `1e-8`), and $\lVert\star\rVert_{1}$ is the L1-norm, then set $\texttt{converged} \gets \texttt{true}$.
+      - **Alternative**: If $\lVert \mathbf{p} - \mathbf{p}_{\text{prev}}\rVert_{1} \leq \epsilon_p$, where $\mathbf{p}_{\text{prev}}$ is the probability vector from the previous iteration, $\epsilon_p$ is the convergence tolerance for probabilities (default: $\epsilon_{p}$ = `1e-8`), and $\lVert\star\rVert_{1}$ is the L1-norm, then set $\texttt{converged} \gets \texttt{true}$.
    5. **Update state**: $\mathbf{s} \gets\mathbf{s}^{\prime}$ and increment $t \gets t + 1$.
 
 > **Note**: The softmax function in step 2 is directly related to the log-sum-exp function in the energy formulation. Specifically, the gradient of the LSE with respect to $\mathbf{s}$ yields the softmax-weighted combination of memories used in the update rule.
@@ -176,7 +182,7 @@ While not $\texttt{converged}$ and $t \leq \texttt{maxiter}$ __do__:
 Modern Hopfield networks have even stronger convergence properties than their classical counterparts, making them highly effective for practical applications.
 
 * **Guaranteed Convergence**: Like classical Hopfield networks, modern variants are **guaranteed to converge** to a fixed point. The energy function serves as a Lyapunov function that decreases monotonically with each update until reaching a minimum.
-* **Exponential Convergence Rate**: Modern Hopfield networks exhibit **exponential convergence** to stored memories, dramatically faster than the polynomial convergence of classical networks. The softmax operation creates a "winner-take-all" dynamic that rapidly identifies and converges to the most similar stored pattern.
+* **Exponential Convergence Rate**: Modern Hopfield networks exhibit **exponential convergence** to stored memories, dramatically faster than the polynomial convergence of classical networks. The softmax operation creates a _winner-take-all_ dynamic that rapidly identifies and converges to the most similar stored pattern.
 
 Let's discuss convergence of modern Hopfield networks in practice.
 
@@ -185,8 +191,8 @@ Let's discuss convergence of modern Hopfield networks in practice.
 > In practice, modern Hopfield networks converge quickly: in the best case, convergence occurs in 1–5 iterations. However, in the worst case, it may take 100–200 iterations, especially if the initial state is far from any stored memory or if the memories are highly correlated.
 >
 > **Factors Affecting Convergence**:
-> - **Inverse temperature β**: Higher β leads to faster convergence but may reduce the basin of attraction
-> - **Memory separation**: Well-separated memories in the feature space converge faster
+> - **Inverse temperature β**: Higher β leads to faster convergence but may reduce the basin of attraction, i.e., the range of initial states that converge to a given memory
+> - **Memory separation**: Well-separated memories in the feature space converge faster, i.e, they are easier to distinguish
 > - **Initialization quality**: Starting closer to any stored pattern leads to faster convergence
 
 The exponential convergence rate, combined with increased storage capacity and continuous memory representations, makes modern Hopfield networks significantly more practical than classical variants for real-world applications, especially in high-dimensional continuous data scenarios.
@@ -204,8 +210,6 @@ Background reading for this lecture (and the associated lab) can be found from t
 * [Krotov, D., & Hopfield, J.J. (2020). Large Associative Memory Problem in Neurobiology and Machine Learning. ArXiv, abs/2008.06996.](https://arxiv.org/abs/2008.06996)
 
 The following blog post is also helpful: [Hopfield Networks is All You Need Blog, GitHub.io](https://ml-jku.github.io/hopfield-layers/)
-
-___
 
 ## Summary
 

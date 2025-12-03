@@ -222,13 +222,14 @@ end
 """
     decode(simulationstate::Array{T,1}; number_of_rows::Int64 = 28, number_of_cols::Int64 = 28) -> Array{T,2}
 
-Reshape a flattened Hopfield state vector into an image matrix, mapping spins to pixel intensities.
+Copy a flattened Hopfield state vector into a 2D array without remapping the values.
+Entries are consumed in row-major order (first row left-to-right, then the next row), which differs from `reshape`.
 
-- `simulationstate`: length `number_of_rows * number_of_cols` vector containing ±1 spin values.
+- `simulationstate`: vector with at least `number_of_rows * number_of_cols` entries; values are preserved as-is.
 - `number_of_rows`: output image height; defaults to 28 for MNIST-style digits.
 - `number_of_cols`: output image width; defaults to 28 for MNIST-style digits.
 
-Returns a `number_of_rows x number_of_cols` `Int32` array where `-1` becomes `0` and any other value becomes `1`. A `BoundsError` will be thrown if the provided vector is shorter than the requested shape.
+Returns a `number_of_rows x number_of_cols` `Array{T,2}` filled with the copied values. Extra elements in longer vectors are ignored; a `BoundsError` is thrown if the vector is too short for the requested shape.
 """
 function decode(simulationstate::Array{T,1}; 
     number_of_rows::Int64 = 28, number_of_cols::Int64 = 28)::Array{T,2} where T <: Number
