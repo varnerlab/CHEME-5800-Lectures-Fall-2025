@@ -1,6 +1,9 @@
 
 """
-    _energy(W::Array{T,2}, α::Array{T,1}, s::Array{T,1}) -> T where T <: Number
+    _energy(s::Array{<:Number,1}, W::Array{<:Number,2}, b::Array{<:Number,1}) -> Float32
+
+Compute the Hopfield energy of state `s` given weight matrix `W` and bias vector `b` using
+`E(s) = -0.5 * s' * W * s + b' * s`.
 """
 function _energy(s::Array{<: Number,1}, W::Array{<:Number,2}, b::Array{<:Number,1})::Float32
     
@@ -22,16 +25,16 @@ function _energy(s::Array{<: Number,1}, W::Array{<:Number,2}, b::Array{<:Number,
 end
 
 """
-    ⊗(a::Array{Float64,1},b::Array{Float64,1}) -> Array{Float64,2}
+    ⊗(a::Array{T,1}, b::Array{T,1}) -> Array{T,2} where T <: Number
 
-Compute the outer product of two vectors `a` and `b` and returns a matrix.
+Compute the outer product of two numeric vectors `a` and `b`.
 
 ### Arguments
-- `a::Array{Float64,1}`: a vector of length `m`.
-- `b::Array{Float64,1}`: a vector of length `n`.
+- `a::Array{T,1}`: a vector of length `m`.
+- `b::Array{T,1}`: a vector of length `n`.
 
 ### Returns
-- `Y::Array{Float64,2}`: a matrix of size `m x n` such that `Y[i,j] = a[i]*b[j]`.
+- `Y::Array{T,2}`: matrix of size `m x n` with entries `Y[i,j] = a[i] * b[j]`.
 """
 function ⊗(a::Array{T,1}, b::Array{T,1})::Array{T,2} where T <: Number
 
@@ -53,24 +56,25 @@ end
 
 
 """
-    recover(model::MyClassicalHopfieldNetworkModel, sₒ::Array{Int32,1};
+    recover(model::MyClassicalHopfieldNetworkModel, sₒ::Array{Int32,1}, trueenergyvalue::Float32;
         maxiterations::Int = 1000, patience::Union{Int,Nothing} = nothing,
         miniterations_before_convergence::Union{Int,Nothing} = nothing) -> Tuple{Dict{Int64, Array{Int32,1}}, Dict{Int64, Float32}}
 
-Run asynchronous Hopfield updates starting from `sₒ` until convergence (or `maxiterations`) and
-collect the visited states and their energies.
+Run asynchronous Hopfield updates starting from `sₒ`, stopping on convergence, after `maxiterations`,
+or once the energy drops below `trueenergyvalue`. Tracks the state and energy trajectory.
 
 ### Arguments
-- `model::MyClassicalHopfieldNetworkModel`: a Hopfield network model.
-- `sₒ::Array{Int32,1}`: initial state (±1 spins encoded as `Int32`).
-- `maxiterations::Int`: maximum number of updates.
-- `patience::Union{Int,Nothing}`: number of consecutive identical states required to declare convergence. If `nothing`, defaults to `max(5, round(Int, 0.01*N))` where `N` is number of pixels.
-- `miniterations_before_convergence::Union{Int,Nothing}`: minimum updates to run before checking convergence. If `nothing`, defaults to `patience`.
+- `model::MyClassicalHopfieldNetworkModel`: Hopfield network parameters.
+- `sₒ::Array{Int32,1}`: initial state (±1 spins).
+- `trueenergyvalue::Float32`: early-stopping threshold; iteration halts when current energy is ≤ this value.
+- `maxiterations::Int`: maximum updates before forcing termination.
+- `patience::Union{Int,Nothing}`: buffer length used for equality-based convergence; defaults to `max(5, round(Int, 0.1 * N))` with `N` pixels.
+- `miniterations_before_convergence::Union{Int,Nothing}`: minimum iterations before checking convergence; defaults to `patience` and is floored at `patience`.
 
 ### Returns
-Tuple of dictionaries:
-- `frames::Dict{Int64, Array{Int32,1}}`: state at each iteration (starting at key 0).
-- `energydictionary::Dict{Int64, Float32}`: energy at each iteration (starting at key 0).
+Tuple of dictionaries keyed from `0`:
+- `frames::Dict{Int64, Array{Int32,1}}`: spin configuration per iteration.
+- `energydictionary::Dict{Int64, Float32}`: energy per iteration.
 """
 function recover(model::MyClassicalHopfieldNetworkModel, sₒ::Array{Int32,1}, trueenergyvalue::Float32;
     maxiterations::Int = 1000, patience::Union{Int,Nothing} = nothing,
@@ -155,19 +159,19 @@ end
     recover(model::MyModernHopfieldNetworkModel, sₒ::Array{T,1}; 
         maxiterations::Int64 = 1000, ϵ::Float64 = 1e-10) where T <: Number
 
-This method takes a moderm Hopfield network model and a random state 
-and state `s`, the frames and the probabilities of the states at each iteration.
+Iteratively update a modern Hopfield network by alternating softmax probability updates and state reconstruction.
+Stops when change in probabilities is below `ϵ` or after `maxiterations`.
 
 ### Arguments
-- `model::MyModernHopfieldNetworkModel`: a Hopfield network model.
-- `sₒ::Array{T,1}`: a random state.
-- `maxiterations::Int64`: the maximum number of iterations.
-- `ϵ::Float64`: the convergence threshold.
+- `model::MyModernHopfieldNetworkModel`: Hopfield network containing memory matrix `X` and inverse-temperature `β`.
+- `sₒ::Array{T,1}`: initial continuous state.
+- `maxiterations::Int64`: maximum number of update steps (probability + state).
+- `ϵ::Float64`: L2 threshold on successive probability vectors for convergence.
 
 ### Returns
-- `s::Array{T,1}`: the final state.
-- `frames::Dict{Int64, Array{Float32,1}}`: a dictionary of frames (states at each iteration).
-- `probability::Dict{Int64, Array{Float64,1}}`: a dictionary of probabilities (probabilities of the states at each iteration).
+- `s::Array{T,1}`: final state.
+- `frames::Dict{Int64, Array{Float32,1}}`: stored states per iteration (keyed from `0`).
+- `probability::Dict{Int64, Array{Float64,1}}`: stored probability vectors per iteration (keyed from `0`).
 """
 function recover(model::MyModernHopfieldNetworkModel, sₒ::Array{T,1}; 
     maxiterations::Int64 = 1000, ϵ::Float64 = 1e-10) where T <: Number

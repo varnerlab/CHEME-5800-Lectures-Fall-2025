@@ -53,6 +53,18 @@ function build(modeltype::Type{MyClassicalHopfieldNetworkModel}, data::NamedTupl
     return model;
 end
 
+"""
+    build(modeltype::Type{MyModernHopfieldNetworkModel}, data::NamedTuple) -> MyModernHopfieldNetworkModel
+
+Factory method for assembling a modern Hopfield network model from raw memories and an inverse-temperature parameter.
+
+### Arguments
+- `modeltype::Type{MyModernHopfieldNetworkModel}`: concrete model type to instantiate.
+- `data::NamedTuple`: expects `memories` (matrix with memories on columns) and `β` (inverse-temperature scalar).
+
+### Returns
+- `model::MyModernHopfieldNetworkModel`: model populated with `X` (memory matrix) and `β`.
+"""
 function build(modeltype::Type{MyModernHopfieldNetworkModel}, data::NamedTuple)::MyModernHopfieldNetworkModel
 
     # initialize -

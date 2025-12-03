@@ -1,3 +1,6 @@
+"""
+Abstract supertype for Hopfield network models defined in this project.
+"""
 abstract type AbstractlHopfieldNetworkModel end
 
 """
@@ -24,11 +27,11 @@ end
 """
     MyModernHopfieldNetworkModel <: AbstractlHopfieldNetworkModel
 
-A mutable struct representing a classical Hopfield network model.
+A mutable struct representing a modern Hopfield network model.
 
 ### Fields
-- `X::Array{<:Number, 2}`: data matrix.
-- `β::Number`: beta parameter (inverse temperature).
+- `X::Array{<:Number, 2}`: data matrix with memories stored in the columns.
+- `β::Number`: beta parameter (inverse temperature) controlling sharpness of softmax updates.
 """
 mutable struct MyModernHopfieldNetworkModel <: AbstractlHopfieldNetworkModel
 
