@@ -37,6 +37,7 @@ mutable struct MyModernHopfieldNetworkModel <: AbstractlHopfieldNetworkModel
 
     # data -
     X::Array{<:Number, 2} # data matrix
+    X̂::Array{<:Number, 2} # normalized data matrix
     β::Number; # beta parameter
 
     # empty constructor -

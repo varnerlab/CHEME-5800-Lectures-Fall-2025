@@ -174,10 +174,10 @@ Stops when L1 change in probabilities is below `ϵ` or after `maxiterations`.
 - `probability::Dict{Int64, Array{Float64,1}}`: stored probability vectors per iteration (keyed from `0`).
 """
 function recover(model::MyModernHopfieldNetworkModel, sₒ::Array{T,1}; 
-    maxiterations::Int64 = 1000, ϵ::Float64 = 1e-10) where T <: Number
+    maxiterations::Int64 = 1000, ϵₚ::Float64 = 1e-10, ϵₛ::Float64 = 1e-10) where T <: Number
 
     # initialize -
-    X = model.X; # data matrix from the model. This holds the memories on the columns
+    X = model.X̂; # data matrix from the model. This holds the memories on the columns
     β = model.β; # beta parameter (inverse temperature)
 
     frames = Dict{Int64, Array{Float32,1}}(); # save the iterations -
@@ -189,7 +189,8 @@ function recover(model::MyModernHopfieldNetworkModel, sₒ::Array{T,1};
 
     # loop -
     s = copy(sₒ); # initial state
-    Δ = Inf; # initial delta
+    Δₚ = Inf; # initial delta for probability change
+    Δₛ = Inf; # initial delta for state change
     while (should_stop_iteration == false)
         
         p = softmax(β*transpose(X)*s); # compute the probabilities
@@ -200,14 +201,19 @@ function recover(model::MyModernHopfieldNetworkModel, sₒ::Array{T,1};
 
         # first: compute the difference between the current and previous probabilities
         if (iteration_counter > 1)
-            Δ = (1/2)*norm(probability[iteration_counter] - probability[iteration_counter-1], 1); # L1 change
+            Δₚ = (1/2)*norm(probability[iteration_counter] - probability[iteration_counter-1], 1); # L1 change
+        end
+
+        # next compute the difference between the current and previous states
+        if (iteration_counter > 1)
+            Δₛ = (1/2)*norm(frames[iteration_counter] - frames[iteration_counter-1], 2); # L2 change
         end
 
         # next: check for convergence. If we are out of iterations or the difference is small, we stop
         if (iteration_counter >= maxiterations)
             should_stop_iteration = true;
-            @warn "Maximum iterations ($maxiterations) reached before convergence (Δ = $Δ, ϵ = $ϵ)."
-        elseif (Δ ≤ ϵ)
+            @warn "Maximum iterations ($maxiterations) reached before convergence (Δ = $Δₚ, ϵ = $ϵₚ)."
+        elseif (Δₚ ≤ ϵₚ && Δₛ ≤ ϵₛ)
             should_stop_iteration = true;
         else
             iteration_counter += 1; # increment the iteration counter, we are not done yet. Keep going.

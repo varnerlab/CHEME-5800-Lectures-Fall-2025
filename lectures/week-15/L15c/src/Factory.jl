@@ -70,11 +70,13 @@ function build(modeltype::Type{MyModernHopfieldNetworkModel}, data::NamedTuple):
     # initialize -
     model = modeltype();
     linearimagecollection = data.memories;
+    normalized_linear_image_collection = data.normalized_memories;
     β = data.β; # beta parameter
     
     # add stuff the model -
     model.β = β;
     model.X = linearimagecollection;
+    model.X̂ = normalized_linear_image_collection;
 
     # return -
     return model;
