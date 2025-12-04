@@ -31,6 +31,7 @@ A mutable struct representing a modern Hopfield network model.
 
 ### Fields
 - `X::Array{<:Number, 2}`: data matrix with memories stored in the columns.
+- `X̂::Array{<:Number, 2}`: normalized data matrix.
 - `β::Number`: beta parameter (inverse temperature) controlling sharpness of softmax updates.
 """
 mutable struct MyModernHopfieldNetworkModel <: AbstractlHopfieldNetworkModel
